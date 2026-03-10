@@ -1,0 +1,199 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  /* Map shadcn tokens to CSS vars */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Jarvis custom tokens */
+  --color-jarvis-cyan: var(--jarvis-cyan);
+  --color-jarvis-glow: var(--jarvis-glow);
+  --color-jarvis-surface: var(--jarvis-surface);
+  --color-jarvis-surface-elevated: var(--jarvis-surface-elevated);
+  --color-jarvis-user-bubble: var(--jarvis-user-bubble);
+}
+
+/* Light mode theme */
+:root:not(.dark) {
+  --radius: 0.5rem;
+
+  /* Core background scale - Light */
+  --background: oklch(0.98 0.005 240);
+  /* #f8fafc near-white */
+  --foreground: oklch(0.15 0.02 240);
+  /* #1e293b slate dark */
+
+  /* Card / surface */
+  --card: oklch(1 0 0);
+  /* white */
+  --card-foreground: oklch(0.15 0.02 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.02 240);
+
+  /* Primary = Electric Cyan (keep same for brand) */
+  --primary: oklch(0.78 0.18 200);
+  /* #00d4ff */
+  --primary-foreground: oklch(1 0 0);
+
+  /* Secondary = Soft Indigo */
+  --secondary: oklch(0.9 0.01 260);
+  /* #e0e7ff */
+  --secondary-foreground: oklch(0.15 0.02 240);
+
+  --muted: oklch(0.95 0.01 240);
+  --muted-foreground: oklch(0.55 0.04 240);
+  /* #64748b steel */
+
+  --accent: oklch(0.78 0.18 200);
+  --accent-foreground: oklch(1 0 0);
+
+  --destructive: oklch(0.65 0.22 27);
+
+  --border: oklch(0.78 0.18 200 / 20%);
+  /* cyan 20% */
+  --input: oklch(0.78 0.18 200 / 15%);
+  --ring: oklch(0.78 0.18 200 / 60%);
+
+  /* Jarvis-specific custom tokens - Light mode */
+  --jarvis-cyan: oklch(0.65 0.15 200);
+  /* slightly darker cyan for contrast */
+  --jarvis-glow: oklch(0.78 0.18 200);
+  --jarvis-surface: oklch(0.97 0.01 240);
+  --jarvis-surface-elevated: oklch(1 0 0);
+  --jarvis-user-bubble: oklch(0.9 0.01 260);
+}
+
+/* ── Jarvis Dark Theme (applied globally as dark class on <html>) ── */
+:root,
+.dark {
+  --radius: 0.5rem;
+
+  /* Core background scale */
+  --background: oklch(0.06 0.015 270);
+  /* #08080e near-black */
+  --foreground: oklch(0.9 0.01 220);
+  /* #e2e8f0 ice white */
+
+  /* Card / surface */
+  --card: oklch(0.1 0.02 255);
+  /* #0d1117 */
+  --card-foreground: oklch(0.9 0.01 220);
+  --popover: oklch(0.12 0.025 255);
+  --popover-foreground: oklch(0.9 0.01 220);
+
+  /* Primary = Electric Cyan */
+  --primary: oklch(0.78 0.18 200);
+  /* #00d4ff */
+  --primary-foreground: oklch(0.06 0.015 270);
+
+  /* Secondary = Space Indigo */
+  --secondary: oklch(0.22 0.07 265);
+  /* #1e2952 */
+  --secondary-foreground: oklch(0.9 0.01 220);
+
+  --muted: oklch(0.15 0.03 255);
+  --muted-foreground: oklch(0.5 0.04 240);
+  /* #64748b steel */
+
+  --accent: oklch(0.78 0.18 200);
+  --accent-foreground: oklch(0.06 0.015 270);
+
+  --destructive: oklch(0.65 0.22 27);
+
+  --border: oklch(0.78 0.18 200 / 15%);
+  /* cyan 15% */
+  --input: oklch(0.78 0.18 200 / 10%);
+  --ring: oklch(0.78 0.18 200 / 60%);
+
+  /* Jarvis-specific custom tokens */
+  --jarvis-cyan: oklch(0.78 0.18 200);
+  --jarvis-glow: oklch(0.9 0.2 200);
+  /* pure cyan glow */
+  --jarvis-surface: oklch(0.1 0.02 255);
+  --jarvis-surface-elevated: oklch(0.13 0.025 255);
+  --jarvis-user-bubble: oklch(0.22 0.07 240);
+  /* user message bg */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+}
+
+@layer components {
+
+  /* Glassmorphic panel - uses CSS variables for theme adaptation */
+  .glass-panel {
+    background: var(--card);
+    backdrop-filter: blur(20px);
+    border: 1px solid oklch(0.78 0.18 200 / 20%);
+  }
+
+  /* Cyan glow text */
+  .text-cyan-glow {
+    color: var(--jarvis-cyan);
+    text-shadow: 0 0 20px oklch(0.78 0.18 200 / 60%);
+  }
+
+  /* Orb glow shadow */
+  .orb-glow {
+    box-shadow:
+      0 0 40px oklch(0.78 0.18 200 / 40%),
+      0 0 80px oklch(0.78 0.18 200 / 20%),
+      0 0 120px oklch(0.78 0.18 200 / 10%);
+  }
+
+  /* Scrollbar */
+  .scrollbar-jarvis {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.78 0.18 200 / 30%) transparent;
+  }
+
+  .scrollbar-jarvis::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .scrollbar-jarvis::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-jarvis::-webkit-scrollbar-thumb {
+    background: oklch(0.78 0.18 200 / 30%);
+    border-radius: 2px;
+  }
+}
