@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react"
-import { Send, Mic, MicOff, Loader2, Upload, X, FileText } from "lucide-react"
+import { Send, Mic, MicOff, Loader2, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
@@ -172,10 +172,10 @@ export function ChatInput() {
     }
   }, [])
 
-  // Remove uploaded file
-  const removeFile = useCallback((index: number) => {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
-  }, [])
+  // File upload handling - commented out for now
+  // const _removeFile = useCallback((index: number) => {
+  // setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
+  // }, [])
 
   // Auto-resize textarea
   useEffect(() => {

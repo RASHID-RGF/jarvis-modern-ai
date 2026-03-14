@@ -26,7 +26,7 @@ export function ChatPanel() {
 
   return (
     <div
-      className="flex flex-col h-full glass-panel overflow-hidden"
+      className="flex flex-col h-full glass-panel overflow-hidden hud-corners"
       style={{ borderLeft: "1px solid oklch(0.78 0.18 200 / 12%)" }}
     >
       {/* Chat header */}
@@ -34,7 +34,8 @@ export function ChatPanel() {
         className="flex items-center gap-2 px-4 py-3 shrink-0"
         style={{ borderBottom: "1px solid oklch(0.78 0.18 200 / 12%)" }}
       >
-        <div className="text-[9px] tracking-[0.2em] uppercase text-muted-foreground">
+        <div className="pulse-dot" />
+        <div className="tech-label">
           CONVERSATION LOG
         </div>
         <div className="flex-1" />

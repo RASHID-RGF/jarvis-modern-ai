@@ -1,0 +1,12 @@
+[
+  [
+    {
+      "role": "user",
+      "content": "heyy"
+    },
+    {
+      "role": "assistant",
+      "content": "No free API key found. Please set one of these environment variables:\n\n\u2022 GROQ_API_KEY \n\nThen restart the backend."
+    }
+  ]
+]

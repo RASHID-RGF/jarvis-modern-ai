@@ -2,17 +2,46 @@ import os
 import asyncio
 import json
 from pathlib import Path
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, HTTPException, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import aiohttp
 import uuid
 from datetime import datetime
+import firebase_admin
+from firebase_admin import credentials, auth
+from functools import lru_cache
 
 # Load .env file
 from dotenv import load_dotenv
 env_path = Path(__file__).parent / ".env"
 load_dotenv(env_path)
+
+# Initialize Firebase Admin SDK
+firebase_cred_path = Path(__file__).parent / "firebase-cred.json"
+if firebase_cred_path.exists():
+    cred = credentials.Certificate(str(firebase_cred_path))
+    firebase_admin.initialize_app(cred)
+else:
+    # Try to use default credentials from environment
+    try:
+        firebase_config = {
+            "type": "service_account",
+            "project_id": os.getenv("FIREBASE_PROJECT_ID"),
+            "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
+            "private_key": os.getenv("FIREBASE_PRIVATE_KEY").replace("\\n", "\n") if os.getenv("FIREBASE_PRIVATE_KEY") else None,
+            "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
+            "client_id": os.getenv("FIREBASE_CLIENT_ID"),
+            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+            "token_uri": "https://oauth2.googleapis.com/token",
+            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+            "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_X509_CERT_URL")
+        }
+        if firebase_config["project_id"] and firebase_config["private_key"]:
+            cred = credentials.Certificate(firebase_config)
+            firebase_admin.initialize_app(cred)
+    except Exception as e:
+        print(f"Firebase initialization skipped: {e}")
 
 app = FastAPI()
 
@@ -73,13 +102,17 @@ NVIDIA_API_URL = "https://ai.api.nvidia.com/v1/retrieval/nvidia/llama-nemotron-r
 
 # Free LLM API endpoints
 FREE_LLM_APIS = {
-    "groq": {
-        "url": "https://api.groq.com/openai/v1/chat/completions",
-        "models": ["llama-3.1-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
-        "key_env": "GROQ_API_KEY"
-    } 
-
-    }
+"groq": {
+"url": "https://api.groq.com/openai/v1/chat/completions",
+"models": ["llama-3.1-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
+"key_env": "GROQ_API_KEY"
+},
+"gemini": {
+"url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+"models": ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+"key_env": "GEMINI_API_KEY"
+}
+}
 
 
 def get_api_key(env_name: str) -> str:
@@ -371,3 +404,51 @@ async def websocket_endpoint(websocket: WebSocket):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# Auth dependency - Optional for protected routes
+async def get_current_user(authorization: str = Header(None)) -> Optional[Dict[str, Any]]:
+    """Verify Firebase token and return user info"""
+    if not authorization:
+        return None
+    
+    try:
+        # Extract token from "Bearer <token>"
+        parts = authorization.split()
+        if len(parts) != 2 or parts[0].lower() != "bearer":
+            return None
+        
+        token = parts[1]
+        decoded_token = auth.verify_id_token(token)
+        return {
+            "uid": decoded_token.get("uid"),
+            "email": decoded_token.get("email"),
+            "name": decoded_token.get("name"),
+            "picture": decoded_token.get("picture"),
+        }
+    except Exception as e:
+        print(f"Token verification failed: {e}")
+        return None
+
+@app.get("/auth/me")
+async def get_current_user_info(current_user: Optional[Dict] = Depends(get_current_user)):
+    """Get current authenticated user info"""
+    if not current_user:
+        return {"authenticated": False}
+    return {"authenticated": True, "user": current_user}
+
+@app.post("/auth/verify")
+async def verify_token(token_data: Dict[str, str]):
+    """Verify a Firebase ID token"""
+    token = token_data.get("idToken")
+    if not token:
+        raise HTTPException(status_code=400, detail="No token provided")
+    
+    try:
+        decoded_token = auth.verify_id_token(token)
+        return {
+            "valid": True,
+            "uid": decoded_token.get("uid"),
+            "email": decoded_token.get("email"),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")

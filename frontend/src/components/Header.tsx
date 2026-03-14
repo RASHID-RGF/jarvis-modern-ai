@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react"
-import { Cpu, Wifi, WifiOff, Trash2, Volume2, VolumeX, Settings } from "lucide-react"
+import { Cpu, Wifi, WifiOff, Trash2, Volume2, VolumeX, Settings, LogIn, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useChatStore } from "@/stores/chatStore"
@@ -7,12 +7,15 @@ import { checkHealth } from "@/lib/api"
 import { speechService } from "@/lib/speech"
 import { cn } from "@/lib/utils"
 import { useSettingsStore, applyTheme } from "@/stores/settingsStore"
+import { useAuthStore } from "@/stores/authStore"
+import { signInWithGoogle, logOut } from "@/lib/firebase"
 
 export function Header() {
   const clearMessages = useChatStore((s) => s.clearMessages)
   const messages = useChatStore((s) => s.messages)
   const setVoiceEnabled = useChatStore((s) => s.setVoiceEnabled)
   const settings = useSettingsStore()
+  const { user, isAuthenticated } = useAuthStore()
   const [time, setTime] = useState(new Date())
   const [online, setOnline] = useState<boolean | null>(null)
   const [speechSupported, setSpeechSupported] = useState(true)
@@ -245,6 +248,42 @@ export function Header() {
         >
           <Trash2 size={14} />
         </Button>
+
+        <Separator orientation="vertical" className="h-5 opacity-30" />
+
+        {/* Auth */}
+        {isAuthenticated ? (
+          <div className="flex items-center gap-2">
+            {user?.photoURL && (
+              <img
+                src={user.photoURL}
+                alt={user.displayName || "User"}
+                className="w-7 h-7 rounded-full border border-cyan-500/30"
+                title={user.displayName || "Signed in"}
+              />
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-8 h-8 text-muted-foreground hover:text-destructive"
+              onClick={() => logOut()}
+              title="Sign out"
+            >
+              <LogOut size={14} />
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs gap-1.5"
+            onClick={() => signInWithGoogle()}
+            title="Sign in with Google"
+          >
+            <LogIn size={14} />
+            <span className="hidden sm:inline">Sign In</span>
+          </Button>
+        )}
       </div>
     </header>
   )
@@ -253,7 +292,7 @@ export function Header() {
 function StatusPill({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col items-center gap-0.5">
-      <span className="text-[9px] tracking-[0.15em] uppercase text-muted-foreground">
+      <span className="tech-label" style={{ fontSize: '9px' }}>
         {label}
       </span>
       <span

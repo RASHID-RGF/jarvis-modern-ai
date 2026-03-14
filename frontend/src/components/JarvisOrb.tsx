@@ -29,6 +29,9 @@ export function JarvisOrb() {
         <PulseRing delay={0.4} size={240} color={color} orbState={orbState} />
         <PulseRing delay={0.8} size={200} color={color} orbState={orbState} />
 
+        {/* Hexagonal HUD overlay */}
+        <HexagonHUD color={color} orbState={orbState} />
+
         {/* Rotating arc (thinking state) */}
         <AnimatePresence>
           {orbState === "thinking" && (
@@ -172,6 +175,45 @@ export function JarvisOrb() {
   )
 }
 
+function InfoPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="flex items-center gap-2 px-2 py-1 rounded-sm"
+      style={{
+        background: 'oklch(0.78 0.18 200 / 8%)',
+        border: '1px solid oklch(0.78 0.18 200 / 15%)',
+      }}
+    >
+      <span className="text-[8px] tracking-[0.15em] uppercase" style={{ color: 'oklch(0.78 0.18 200 / 50%)' }}>
+        {label}
+      </span>
+      <span className="text-[9px] font-mono" style={{ color: 'var(--jarvis-cyan)' }}>
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function useUptime() {
+  const [uptime, setUptime] = useState("00:00:00")
+
+  useEffect(() => {
+    const start = Date.now()
+    const update = () => {
+      const diff = Math.floor((Date.now() - start) / 1000)
+      const h = String(Math.floor(diff / 3600)).padStart(2, '0')
+      const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0')
+      const s = String(diff % 60).padStart(2, '0')
+      setUptime(`${h}:${m}:${s}`)
+    }
+    update()
+    const interval = setInterval(update, 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  return uptime
+}
+
 function PulseRing({
   delay,
   size,
@@ -198,34 +240,33 @@ function PulseRing({
   )
 }
 
-function InfoPill({ label, value }: { label: string; value: string }) {
+function HexagonHUD({ color, orbState }: { color: string; orbState: OrbState }) {
+  const isActive = orbState !== "idle"
+  
   return (
-    <div
-      className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-sm"
-      style={{
-        background: "oklch(0.1 0.02 255 / 60%)",
-        border: "1px solid oklch(0.78 0.18 200 / 15%)",
-      }}
+    <motion.svg
+      className="absolute"
+      width="260"
+      height="260"
+      viewBox="0 0 260 260"
+      animate={{ rotate: isActive ? 360 : 0 }}
+      transition={{ rotate: { duration: isActive ? 30 : 0, repeat: isActive ? Infinity : 0, ease: "linear" } }}
     >
-      <span className="text-[8px] tracking-[0.15em] uppercase text-muted-foreground">{label}</span>
-      <span className="text-[11px] font-mono" style={{ color: "var(--jarvis-cyan)" }}>
-        {value}
-      </span>
-    </div>
+      {/* Outer hexagon */}
+      <polygon
+        points="130,10 240,70 240,190 130,250 20,190 20,70"
+        fill="none"
+        stroke={`${color}15`}
+        strokeWidth="1"
+      />
+      {/* Inner hexagon */}
+      <polygon
+        points="130,30 220,80 220,180 130,230 40,180 40,80"
+        fill="none"
+        stroke={`${color}10`}
+        strokeWidth="1"
+        strokeDasharray="4 4"
+      />
+    </motion.svg>
   )
-}
-
-function useUptime() {
-  const [start] = useState(() => Date.now())
-  const [now, setNow] = useState(Date.now())
-
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(t)
-  }, [])
-
-  const s = Math.floor((now - start) / 1000)
-  const m = Math.floor(s / 60)
-  const h = Math.floor(m / 60)
-  return h > 0 ? `${h}h ${m % 60}m` : m > 0 ? `${m}m ${s % 60}s` : `${s}s`
 }
