@@ -20,8 +20,30 @@ load_dotenv(env_path)
 # Initialize Firebase Admin SDK
 firebase_cred_path = Path(__file__).parent / "firebase-cred.json"
 if firebase_cred_path.exists():
-    cred = credentials.Certificate(str(firebase_cred_path))
-    firebase_admin.initialize_app(cred)
+    try:
+        cred = credentials.Certificate(str(firebase_cred_path))
+        firebase_admin.initialize_app(cred)
+    except Exception as e:
+        # Try to use default credentials from environment
+        print(f"Firebase credentials file invalid: {e}")
+        try:
+            firebase_config = {
+                "type": "service_account",
+                "project_id": os.getenv("FIREBASE_PROJECT_ID"),
+                "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
+                "private_key": os.getenv("FIREBASE_PRIVATE_KEY").replace("\\n", "\n") if os.getenv("FIREBASE_PRIVATE_KEY") else None,
+                "client_email": os.getenv("FIREBASE_CLIENT_EMAIL"),
+                "client_id": os.getenv("FIREBASE_CLIENT_ID"),
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "client_x509_cert_url": os.getenv("FIREBASE_CLIENT_X509_CERT_URL")
+            }
+            if firebase_config["project_id"] and firebase_config["private_key"]:
+                cred = credentials.Certificate(firebase_config)
+                firebase_admin.initialize_app(cred)
+        except Exception as e:
+            print(f"Firebase initialization skipped: {e}")
 else:
     # Try to use default credentials from environment
     try:
@@ -111,6 +133,11 @@ FREE_LLM_APIS = {
 "url": "https://generativelanguage.googleapis.com/v1beta/openai/",
 "models": ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
 "key_env": "GEMINI_API_KEY"
+},
+"nova": {
+    "url": "https://api.nova.amazon.com/v1/chat/completions",
+    "models": ["nova-2-lite-v1", "nova-2-pro-v1", "nova-2-micro-v1"],
+    "key_env": "NOVA_API_KEY"
 }
 }
 

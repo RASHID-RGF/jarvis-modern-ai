@@ -13,6 +13,7 @@ class SpeechService {
     private voices: SpeechSynthesisVoice[] = []
     private isEnabled: boolean = true
     private onStateChange: ((enabled: boolean) => void) | null = null
+    private selectedVoiceName: string | null = null
 
     constructor() {
         this.synth = window.speechSynthesis
@@ -35,6 +36,13 @@ class SpeechService {
      */
     getVoices(): SpeechSynthesisVoice[] {
         return this.voices
+    }
+
+    /**
+     * Get a voice by its name
+     */
+    getVoiceByName(name: string): SpeechSynthesisVoice | null {
+        return this.voices.find(v => v.name === name) || null
     }
 
     /**
@@ -90,11 +98,17 @@ class SpeechService {
 
         const utterance = new SpeechSynthesisUtterance(text)
 
+        // Determine which voice to use: explicit option > selected preference > default
+        let voice = options.voice
+        if (!voice) {
+            voice = this.getSelectedVoice() || this.getPreferredVoice()
+        }
+
         // Apply options
         utterance.rate = options.rate ?? 1.0
         utterance.pitch = options.pitch ?? 1.0
         utterance.volume = options.volume ?? 1.0
-        utterance.voice = options.voice ?? this.getPreferredVoice()
+        utterance.voice = voice
 
         // Configure for JARVIS-like sound
         // Slightly lower pitch, measured pace for AI feel
@@ -137,6 +151,21 @@ class SpeechService {
         return () => {
             this.onStateChange = null
         }
+    }
+
+    /**
+     * Set the selected voice by name (for persistence)
+     */
+    setSelectedVoice(name: string | null): void {
+        this.selectedVoiceName = name
+    }
+
+    /**
+     * Get the currently selected voice
+     */
+    getSelectedVoice(): SpeechSynthesisVoice | null {
+        if (!this.selectedVoiceName) return null
+        return this.getVoiceByName(this.selectedVoiceName)
     }
 }
 

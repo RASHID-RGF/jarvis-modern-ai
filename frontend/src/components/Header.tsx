@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react"
-import { Cpu, Wifi, WifiOff, Trash2, Volume2, VolumeX, Settings, LogIn, LogOut } from "lucide-react"
+import { Cpu, Wifi, WifiOff, Trash2, Volume2, VolumeX, Settings, LogIn, LogOut, Info, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useChatStore } from "@/stores/chatStore"
@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils"
 import { useSettingsStore, applyTheme } from "@/stores/settingsStore"
 import { useAuthStore } from "@/stores/authStore"
 import { signInWithGoogle, logOut } from "@/lib/firebase"
+import { AboutModal } from "@/components/AboutModal"
+import { BlogModal } from "@/components/BlogModal"
 
 export function Header() {
   const clearMessages = useChatStore((s) => s.clearMessages)
@@ -20,7 +22,10 @@ export function Header() {
   const [online, setOnline] = useState<boolean | null>(null)
   const [speechSupported, setSpeechSupported] = useState(true)
   const [openSettings, setOpenSettings] = useState(false)
+  const [openAbout, setOpenAbout] = useState(false)
+  const [openBlog, setOpenBlog] = useState(false)
   const settingsRef = useRef<HTMLDivElement>(null)
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
 
   // Close settings dropdown when clicking outside
   useEffect(() => {
@@ -55,6 +60,32 @@ export function Header() {
     setVoiceEnabled(settings.voiceEnabled)
   }, [settings.voiceEnabled, setVoiceEnabled])
 
+  // Load available voices
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = speechService.getVoices()
+      setAvailableVoices(voices)
+    }
+
+    loadVoices()
+
+    // Voices may load asynchronously
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = loadVoices
+    }
+
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = null
+      }
+    }
+  }, [])
+
+  // Sync selected voice with speech service
+  useEffect(() => {
+    speechService.setSelectedVoice(settings.selectedVoice)
+  }, [settings.selectedVoice])
+
   const formattedTime = time.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
@@ -71,7 +102,7 @@ export function Header() {
 
   return (
     <header
-      className="flex items-center justify-between px-6 py-3 glass-panel shrink-0"
+      className="flex items-center justify-between px-6 py-3 glass-panel shrink-0 z-50"
       style={{ borderBottom: "1px solid oklch(0.78 0.18 200 / 20%)" }}
     >
       {/* Logo */}
@@ -90,10 +121,10 @@ export function Header() {
         </div>
         <div>
           <div className="text-sm font-bold tracking-[0.2em] uppercase text-cyan-glow">
-            J.A.R.V.I.S
+            JARVIS MODERN AI
           </div>
           <div className="text-[10px] tracking-widest uppercase text-muted-foreground leading-none">
-            Just A Rather Very Intelligent System
+            Made by Raoq1p9w
           </div>
         </div>
       </div>
@@ -127,6 +158,30 @@ export function Header() {
             </>
           )}
         </div>
+
+        <Separator orientation="vertical" className="h-5 opacity-30" />
+
+        {/* About */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="w-8 h-8 text-muted-foreground hover:text-foreground"
+          onClick={() => setOpenAbout(true)}
+          title="About"
+        >
+          <Info size={14} />
+        </Button>
+
+        {/* Blog */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="w-8 h-8 text-muted-foreground hover:text-foreground"
+          onClick={() => setOpenBlog(true)}
+          title="Blog"
+        >
+          <FileText size={14} />
+        </Button>
 
         <Separator orientation="vertical" className="h-5 opacity-30" />
 
@@ -175,7 +230,7 @@ export function Header() {
 
           {openSettings && (
             <div
-              className="absolute right-0 mt-2 w-60 p-3 rounded-md shadow-lg z-50 glass-panel"
+              className="absolute right-0 mt-2 w-60 max-h-[70vh] overflow-y-auto p-3 rounded-md shadow-lg z-[100] glass-panel"
               style={{ border: "1px solid oklch(0.78 0.18 200 / 25%)", background: "oklch(0.08 0.02 255 / 85%)" }}
             >
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">Settings</div>
@@ -191,6 +246,34 @@ export function Header() {
                   }}
                 />
               </div>
+
+              {settings.voiceEnabled && (
+                <div className="py-1.5">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Voice</div>
+                  <select
+                    className="w-full bg-transparent text-xs border rounded-sm px-2 py-1"
+                    value={settings.selectedVoice || ''}
+                    onChange={(e) => settings.setSelectedVoice(e.target.value || null)}
+                  >
+                    <option value="">Default (Auto)</option>
+                    {availableVoices.map((voice) => (
+                      <option key={voice.name} value={voice.name}>
+                        {voice.name} ({voice.lang})
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full mt-1 text-[10px] h-6"
+                    onClick={() => {
+                      speechService.speak("This is a test of the selected voice.")
+                    }}
+                  >
+                    Test Voice
+                  </Button>
+                </div>
+              )}
 
               <div className="flex items-center justify-between py-1.5">
                 <span className="text-xs text-muted-foreground">Auto-scroll</span>
@@ -285,6 +368,9 @@ export function Header() {
           </Button>
         )}
       </div>
+
+      <AboutModal isOpen={openAbout} onClose={() => setOpenAbout(false)} />
+      <BlogModal isOpen={openBlog} onClose={() => setOpenBlog(false)} />
     </header>
   )
 }
